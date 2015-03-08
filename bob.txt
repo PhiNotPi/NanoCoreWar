@@ -1,0 +1,4 @@
+main mov bomb #-1
+     add @main main
+     jmp #main 0
+bomb dat 0 -1
