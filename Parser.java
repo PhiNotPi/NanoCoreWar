@@ -67,13 +67,13 @@ public class Parser
             //System.out.println("Checkpoint 3");
             if(command.size() == 4)
             {
-                String lineLabel = command.get(0);
+                String lineLabel = command.get(0).toLowerCase();
                 command.remove(0);
                 //System.out.println("Checkpoint 4");
                 for(int j = 0; j < commands.size(); j++)
                 {
                     ArrayList<String> command2 = commands.get(j);
-                    String field = command2.get(command2.size()-2);
+                    String field = command2.get(command2.size()-2).toLowerCase();
                     //System.out.println("Checkpoint 5");
                     if(field.equals(lineLabel))
                     {
@@ -90,7 +90,7 @@ public class Parser
                     }
                     
                     
-                    field = command2.get(command2.size()-1);
+                    field = command2.get(command2.size()-1).toLowerCase();
                     //System.out.println("Checkpoint 5");
                     if(field.equals(lineLabel))
                     {
