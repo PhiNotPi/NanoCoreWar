@@ -215,7 +215,7 @@ public class Game
                 }
                 else if(dupCount > 2)
                 {
-                    System.out.println("    " + (dupCount - 1) + " empty lines skipped.");
+                    System.out.println("    " + (dupCount - 1) + " lines skipped.");
                 }
                 for(int val : line)
                 {
@@ -230,7 +230,8 @@ public class Game
                     System.out.print(" <- 2");
                 }
                 System.out.println();
-                dupCount = 0;
+                dupLine = line;
+                dupCount = 1;
             }
         }
         if(dupCount == 2)
@@ -243,7 +244,7 @@ public class Game
                 }
                 else if(dupCount > 2)
                 {
-                    System.out.println("    " + (dupCount - 1) + " empty lines skipped.");
+                    System.out.println("    " + (dupCount - 1) + " lines skipped.");
                 }
     }
 }
