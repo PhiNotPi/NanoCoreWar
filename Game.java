@@ -1,5 +1,6 @@
 import java.util.Random;
 import java.util.ArrayList;
+import java.util.Arrays;
 /**
  * This runs a game of Core Wars between two players.  It can be called mutiple times.
  * 
@@ -54,7 +55,8 @@ public class Game
     public int run(int deltaOffset)
     {
         core = new int[coreSize][5];
-        offset1 = rand.nextInt(coreSize);
+        //offset1 = rand.nextInt(coreSize);
+        offset1 = 0;
         for(int i = 0; i < p1.getCode().size(); i++)
         {
             System.arraycopy(p1.getCode().get(i), 0, core[(offset1 + i) % coreSize], 0, p1.getCode().get(i).length );
@@ -72,7 +74,7 @@ public class Game
         {
             if(debug > 0)
             {
-                printCore();
+                printCore(p1loc,p2loc);
                 System.out.println("p1loc " + p1loc);
             }
             
@@ -87,7 +89,7 @@ public class Game
             time++;
             if(debug > 0)
             {
-                printCore();
+                printCore(p1loc,p2loc);
                 System.out.println("p2loc " + p2loc);
             }
             if(core[p2loc][0] < 1 || core[p2loc][0] > 6)
@@ -129,68 +131,119 @@ public class Game
         line2 = ((line2 % coreSize) + coreSize) % coreSize;
         int opcode = core[ploc][0];
         ploc = (ploc + 1) % coreSize;
-        String opDescription = "";
+        //String opDescription = "";
         if(opcode == 1)
         {
             System.arraycopy( core[line1], 0, core[line2], 0, core[line1].length );
-            opDescription = "Moved from " + line1 + " to " + line2;
+            //opDescription = "Moved from " + line1 + " to " + line2;
         }
         if(opcode == 2)
         {
                 core[line2][3] += core[line1][3];
                 core[line2][4] += core[line1][4];
-                opDescription = "Added " + line1 + " to " + line2;
+                //opDescription = "Added " + line1 + " to " + line2;
         }
         if(opcode == 3)
         {
                 core[line2][3] -= core[line1][3];
                 core[line2][4] -= core[line1][4];
-                opDescription = "Subtracted " + line1 + " to " + line2;
+                //opDescription = "Subtracted " + line1 + " to " + line2;
         }
         if(opcode == 4)
         {
                 ploc = line1;
-                opDescription = "Jumped to " + line1;
+                //opDescription = "Jumped to " + line1;
         }
         if(opcode == 5)
         {
                 if(core[line2][3] == 0 && core[line2][4] == 0)
                 {
                     ploc = line1;
-                    opDescription = "Jumped to " + line1;
+                    //opDescription = "Jumped to " + line1;
                 }
                 else
                 {
-                    opDescription = "Did not jump to " + line1;
+                    //opDescription = "Did not jump to " + line1;
                 }
         }
         if(opcode == 6)
         {
             if(core[line1][3] == core[line2][3] && core[line1][4] == core[line2][4])
             {
-                opDescription = "Did not skip because " + line1 + " and " + line2 + " were equal.";
+                //opDescription = "Did not skip because " + line1 + " and " + line2 + " were equal.";
             }
             else
             {
                 ploc = (ploc + 1) % coreSize;
-                opDescription = "Skipped because " + line1 + " and " + line2 + " were not equal.";
+                //opDescription = "Skipped because " + line1 + " and " + line2 + " were not equal.";
             }
         }
         if(debug > 0)
         {
-            System.out.println(opDescription);
+            //System.out.println(opDescription);
         }
         return ploc;
     }
-    public void printCore()
+    public void printCore(int p1loc, int p2loc)
     {
-        for(int[] line : core)
+        int dupCount = 0;
+        int[] dupLine = new int[]{0,0,0,0,0};
+        for(int i = 0; i < core.length; i++)
         {
-            for(int val : line)
+            int[] line = core[i];
+            if(Arrays.equals(line, dupLine) && i != p1loc && i != p2loc)
             {
-                System.out.printf("%5d ",val);
+                if(dupCount == 0)
+                {
+                    for(int val : line)
+                    {
+                        System.out.printf("%5d ",val);
+                    }
+                    System.out.println();
+                }
+                dupCount++;
             }
-           System.out.println();
+            else
+            {
+                if(dupCount == 2)
+                {
+                    for(int val : dupLine)
+                    {
+                        System.out.printf("%5d ",val);
+                    }
+                    System.out.println();
+                }
+                else if(dupCount > 2)
+                {
+                    System.out.println("    " + (dupCount - 1) + " empty lines skipped.");
+                }
+                for(int val : line)
+                {
+                    System.out.printf("%5d ",val);
+                }
+                if(i == p1loc)
+                {
+                    System.out.print(" <- 1");
+                }
+                if(i == p2loc)
+                {
+                    System.out.print(" <- 2");
+                }
+                System.out.println();
+                dupCount = 0;
+            }
         }
+        if(dupCount == 2)
+                {
+                    for(int val : dupLine)
+                    {
+                        System.out.printf("%5d ",val);
+                    }
+                    System.out.println();
+                }
+                else if(dupCount > 2)
+                {
+                    System.out.println("    " + (dupCount - 1) + " empty lines skipped.");
+                }
     }
 }
