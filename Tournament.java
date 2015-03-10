@@ -122,7 +122,8 @@ public class Tournament
                     }
                     if(repeats == 0)
                     {
-                        result = g.runAll();
+                        Game g2 = new Game(p2, p1, coreSize, maxTime, debug);
+                        result = g.runAll() - g2.runAll();
                     }
                     if(result > repeats)
                     {
