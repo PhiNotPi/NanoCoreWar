@@ -5,13 +5,14 @@ import java.util.Arrays;
  * This runs a game of Core Wars between two players.  It can be called mutiple times.
  * 
  * @author PhiNotPi 
- * @version 3/08/15
+ * @version 3/10/15
  */
 public class Game
 {
     final Player p1;
     final Player p2;
     final int coreSize;
+    final int coreSizeM1;
     final int maxTime;
     final int debug;
     int[][] core;
@@ -26,7 +27,17 @@ public class Game
     {
         p1 = A;
         p2 = B;
+        
+        coreSize--;
+        coreSize |= coreSize >> 1;
+        coreSize |= coreSize >> 2;
+        coreSize |= coreSize >> 4;
+        coreSize |= coreSize >> 8;
+        coreSize |= coreSize >> 16;
+        coreSize++;
+        
         this.coreSize = coreSize;
+        this.coreSizeM1 = coreSize - 1;
         this.maxTime = maxTime / 2;
         this.debug = debug;
         core = new int[coreSize][5];
@@ -69,7 +80,7 @@ public class Game
         {
             //System.arraycopy(p1.getCode().get(i), 0, core[(offset1 + i) % coreSize], 0, 5 );
             int[] line = p1code.get(i);
-            int loc = (offset1 + i) % coreSize;
+            int loc = (offset1 + i) & coreSizeM1;
             core[loc][0] = line[0];
             core[loc][1] = line[1];
             core[loc][2] = line[2];
@@ -81,7 +92,7 @@ public class Game
         {
             //System.arraycopy(p2.getCode().get(i), 0, core[(offset2 + i) % coreSize], 0, 5 );
             int[] line = p2code.get(i);
-            int loc = (offset2 + i) % coreSize;
+            int loc = (offset2 + i) & coreSizeM1;
             core[loc][0] = line[0];
             core[loc][1] = line[1];
             core[loc][2] = line[2];
@@ -89,8 +100,8 @@ public class Game
             core[loc][4] = line[4];
         }
              
-        int p1loc = offset1 % coreSize;
-        int p2loc = offset2 % coreSize;
+        int p1loc = offset1 & coreSizeM1;
+        int p2loc = offset2 & coreSizeM1;
         for(int time = 0; time != maxTime; time++)
         {
             if(debug != 0)
@@ -130,7 +141,7 @@ public class Game
         }
         if(core[ploc][1] == 2)
         {
-            line1 += core[((line1 % coreSize) + coreSize) % coreSize][3];
+            line1 += core[line1 & coreSizeM1][3];
         }
         int line2 = offset + core[ploc][4];
         if(core[ploc][2] != 0)
@@ -139,12 +150,12 @@ public class Game
         }
         if(core[ploc][2] == 2)
         {
-            line2 += core[((line2 % coreSize) + coreSize) % coreSize][4];
+            line2 += core[line2 & coreSizeM1][4];
         }
-        line1 = ((line1 % coreSize) + coreSize) % coreSize;
-        line2 = ((line2 % coreSize) + coreSize) % coreSize;
+        line1 = line1 & coreSizeM1;
+        line2 = line2 & coreSizeM1;
         int opcode = core[ploc][0];
-        ploc = (ploc + 1) % coreSize;
+        ploc = (ploc + 1) & coreSizeM1;
         //String opDescription = "";
         if(opcode == 1)
         {
@@ -197,7 +208,7 @@ public class Game
             }
             else
             {
-                ploc = (ploc + 1) % coreSize;
+                ploc = (ploc + 1) & coreSizeM1;
                 //opDescription = "Skipped because " + line1 + " and " + line2 + " were not equal.";
             }
             return ploc;
