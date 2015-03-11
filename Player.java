@@ -9,14 +9,14 @@ import java.util.HashMap;
 public class Player
 {
     private String name;
-    private ArrayList<int []> code;
+    private ArrayList<int []> codeList;
     
     boolean isChallenger;
     
     public Player(String name)
     {
         this.name = name;
-        code = new ArrayList<int []>();
+        codeList = new ArrayList<int []>();
         isChallenger = true; //will be set to false by the controller if its name is already on the leaderboard
     }
     
@@ -43,7 +43,7 @@ public class Player
         }
         catch(Exception e)
         {
-            System.out.println("Player " + name + " had a problem at line " + code.size() + ", field A.");
+            System.out.println("Player " + name + " had a problem at line " + codeList.size() + ", field A.");
         }
         int modeB = 1;
         int valB = 0;
@@ -64,17 +64,17 @@ public class Player
         }
         catch(Exception e)
         {
-            System.out.println("Player " + name + " had a problem at line " + code.size() + ", field B");
+            System.out.println("Player " + name + " had a problem at line " + codeList.size() + ", field B");
         }
         command[1] = modeA;
         command[2] = modeB;
         command[3] = valA;
         command[4] = valB;
-        code.add(command);
+        codeList.add(command);
     }
     public ArrayList<int[]> getCode()
     {
-        return code;
+        return codeList;
     }
     public String getName()
     {
