@@ -55,7 +55,7 @@ public class Parser
         {
             String line = lines.get(i);
             System.out.println(line);
-            line = line.trim().replaceAll("\\s+", " ").toUpperCase();
+            line = line.trim().replaceAll(","," ").replaceAll("\\s+", " ").toUpperCase();
             String[] fields = line.split(" ");
             commands.add(new ArrayList<String>(Arrays.asList(line.split(" "))));
             //System.out.println("Checkpoint 1");
