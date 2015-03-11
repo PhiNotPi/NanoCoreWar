@@ -174,7 +174,7 @@ public class Tournament
         }
         
         long endTime = System.nanoTime();
-        System.out.println("The tounrnament took " + ((endTime-startTime)/1000000000.0) + " seconds, or " + ((endTime-startTime)/60000000000.0) + " minutes.");
+        System.out.println("The tournament took " + ((endTime-startTime)/1000000000.0) + " seconds, or " + ((endTime-startTime)/60000000000.0) + " minutes.");
         
     }
 }
