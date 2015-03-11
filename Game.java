@@ -18,21 +18,29 @@ public class Game
     int offset1;
     int offset2;
     Random rand;
+    ArrayList<int[]> p1code;
+    ArrayList<int[]> p2code;
+    int p1size;
+    int p2size;
     public Game(Player A, Player B, int coreSize, int maxTime, int debug)
     {
         p1 = A;
         p2 = B;
         this.coreSize = coreSize;
-        this.maxTime = maxTime;
+        this.maxTime = maxTime / 2;
         this.debug = debug;
         core = new int[coreSize][5];
         rand = new Random();
+        p1code =  p1.getCode();
+        p1size = p1code.size();
+        p2code =  p2.getCode();
+        p2size = p2code.size();
     }
     
     public int runAll()
     {
         int sum = 0;
-        for(int i = 0; i < coreSize - p1.getCode().size() - p2.getCode().size(); i++)
+        for(int i = 0; i < coreSize - p1size - p2size; i++)
         {
             sum += run(i) - 1;
         }
@@ -49,7 +57,7 @@ public class Game
     
     public int run()
     {
-        return run(rand.nextInt(coreSize - p1.getCode().size() - p2.getCode().size()));
+        return run(rand.nextInt(coreSize - p1size - p2size + 1));
     }
     
     public int run(int deltaOffset)
@@ -57,60 +65,66 @@ public class Game
         core = new int[coreSize][5];
         //offset1 = rand.nextInt(coreSize);
         offset1 = 0;
-        for(int i = 0; i < p1.getCode().size(); i++)
+        for(int i = 0; i != p1size; i++)
         {
-            System.arraycopy(p1.getCode().get(i), 0, core[(offset1 + i) % coreSize], 0, p1.getCode().get(i).length );
+            //System.arraycopy(p1.getCode().get(i), 0, core[(offset1 + i) % coreSize], 0, 5 );
+            int[] line = p1code.get(i);
+            int loc = (offset1 + i) % coreSize;
+            core[loc][0] = line[0];
+            core[loc][1] = line[1];
+            core[loc][2] = line[2];
+            core[loc][3] = line[3];
+            core[loc][4] = line[4];
         }
-        offset2 = offset1 + p1.getCode().size() + deltaOffset;
-        for(int i = 0; i < p2.getCode().size(); i++)
+        offset2 = offset1 + p1size + deltaOffset;
+        for(int i = 0; i != p2size; i++)
         {
-            System.arraycopy(p2.getCode().get(i), 0, core[(offset2 + i) % coreSize], 0, p2.getCode().get(i).length );
+            //System.arraycopy(p2.getCode().get(i), 0, core[(offset2 + i) % coreSize], 0, 5 );
+            int[] line = p2code.get(i);
+            int loc = (offset2 + i) % coreSize;
+            core[loc][0] = line[0];
+            core[loc][1] = line[1];
+            core[loc][2] = line[2];
+            core[loc][3] = line[3];
+            core[loc][4] = line[4];
         }
              
         int p1loc = offset1 % coreSize;
         int p2loc = offset2 % coreSize;
-        int time = 0;
-        while(time < maxTime)
+        for(int time = 0; time != maxTime; time++)
         {
-            if(debug > 0)
+            if(debug != 0)
             {
                 printCore(p1loc,p2loc);
                 System.out.println("p1loc " + p1loc);
+                System.out.println("offset " + offset1);
             }
             
-            if(core[p1loc][0] < 1 || core[p1loc][0] > 6)
+            if(core[p1loc][0] == 0)
             {
                 return 0;
             }
-            else
-            {
-                p1loc = execute(p1loc, offset1);
-            }
-            time++;
-            if(debug > 0)
+            p1loc = execute(p1loc, offset1);
+            
+            if(debug != 0)
             {
                 printCore(p1loc,p2loc);
                 System.out.println("p2loc " + p2loc);
+                System.out.println("offset " + offset2);
             }
-            if(core[p2loc][0] < 1 || core[p2loc][0] > 6)
+            if(core[p2loc][0] == 0)
             {
                 return 2;
             }
-            else
-            {
-                p2loc = execute(p2loc, offset2);
-            }
-            time++;
+            p2loc = execute(p2loc, offset2);
+            
         }
         return 1;
     }
     public int execute(int ploc, int offset)
     {
         int line1 = offset + core[ploc][3];
-        if(debug > 0){
-            System.out.println("offset " + offset);
-        }
-        if(core[ploc % coreSize][1] > 0)
+        if(core[ploc][1] != 0)
         {
             line1 += ploc - offset;
         }
@@ -119,7 +133,7 @@ public class Game
             line1 += core[((line1 % coreSize) + coreSize) % coreSize][3];
         }
         int line2 = offset + core[ploc][4];
-        if(core[ploc][2] > 0)
+        if(core[ploc][2] != 0)
         {
             line2 += ploc - offset;
         }
@@ -134,24 +148,32 @@ public class Game
         //String opDescription = "";
         if(opcode == 1)
         {
-            System.arraycopy( core[line1], 0, core[line2], 0, core[line1].length );
+            core[line2][0] = core[line1][0];
+            core[line2][1] = core[line1][1];
+            core[line2][2] = core[line1][2];
+            core[line2][3] = core[line1][3];
+            core[line2][4] = core[line1][4];
+            return ploc;
             //opDescription = "Moved from " + line1 + " to " + line2;
         }
         if(opcode == 2)
         {
                 core[line2][3] += core[line1][3];
                 core[line2][4] += core[line1][4];
+                return ploc;
                 //opDescription = "Added " + line1 + " to " + line2;
         }
         if(opcode == 3)
         {
                 core[line2][3] -= core[line1][3];
                 core[line2][4] -= core[line1][4];
+                return ploc;
                 //opDescription = "Subtracted " + line1 + " to " + line2;
         }
         if(opcode == 4)
         {
                 ploc = line1;
+                return ploc;
                 //opDescription = "Jumped to " + line1;
         }
         if(opcode == 5)
@@ -165,6 +187,7 @@ public class Game
                 {
                     //opDescription = "Did not jump to " + line1;
                 }
+                return ploc;
         }
         if(opcode == 6)
         {
@@ -177,8 +200,9 @@ public class Game
                 ploc = (ploc + 1) % coreSize;
                 //opDescription = "Skipped because " + line1 + " and " + line2 + " were not equal.";
             }
+            return ploc;
         }
-        if(debug > 0)
+        if(debug != 0)
         {
             //System.out.println(opDescription);
         }
@@ -235,16 +259,16 @@ public class Game
             }
         }
         if(dupCount == 2)
-                {
-                    for(int val : dupLine)
-                    {
-                        System.out.printf("%5d ",val);
-                    }
-                    System.out.println();
-                }
-                else if(dupCount > 2)
-                {
-                    System.out.println("    " + (dupCount - 1) + " lines skipped.");
-                }
+        {
+            for(int val : dupLine)
+            {
+                System.out.printf("%5d ",val);
+            }
+            System.out.println();
+        }
+        else if(dupCount > 2)
+        {
+            System.out.println("    " + (dupCount - 1) + " lines skipped.");
+        }
     }
 }
