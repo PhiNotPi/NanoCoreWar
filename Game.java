@@ -73,6 +73,10 @@ public class Game
     
     public int run(int deltaOffset)
     {
+        if(debug != 0)
+        {
+            System.out.println("New game between " + p1.getName() + " and " + p2.getName() + " with offset " + deltaOffset + ":");
+        }
         core = new int[coreSize][5];
         //offset1 = rand.nextInt(coreSize);
         offset1 = 0;
