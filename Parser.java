@@ -119,7 +119,7 @@ public class Parser
         {
             System.out.println(command[0] + " " + command[1] + " " + command[2] + " " + command[3] + " " + command[4]);
         }
+        System.out.println("Hash of " + name + ": " + bot.getUniqueHash());
         return bot;
-        
     }
 }
