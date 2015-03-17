@@ -14,13 +14,10 @@ public class Player
     private String name, hash;
     private ArrayList<int []> codeList;
     
-    boolean isChallenger;
-    
     public Player(String name)
     {
         this.name = name;
         codeList = new ArrayList<int []>();
-        isChallenger = true; //will be set to false by the controller if its name is already on the leaderboard
     }
     
     public void addLine(String opcode, String fieldA, String fieldB)
@@ -74,7 +71,7 @@ public class Player
         command[3] = valA;
         command[4] = valB;
         codeList.add(command);
-	hash = null;  // invalidate old hash
+        hash = null;  // invalidate old hash
     }
     public ArrayList<int[]> getCode()
     {

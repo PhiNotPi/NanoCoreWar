@@ -5,9 +5,11 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.io.File;
+import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 import java.io.PrintWriter;
+import java.io.FileWriter;
 /**
  * This is the main controller for the Nano Core War KOTH
  * 
@@ -19,12 +21,12 @@ public class Tournament
     static int coreSize = 8192;
     static int maxTime = coreSize * 8; //measured in ply
     static int repeats = 0; //number of times a battle is played between each pair of contestants
-    static int overwriteLeaderboardFile = 0;
     static int debug = 0;
+    static int verbose = 0;
     
     static final String settingsFile = "settings.txt";
     static final String playerFile = "playerlist.txt";
-    static final String leaderFile = "leaderboard.txt";
+    static final String saveFile = "savedresults.txt";
     
     public static void main(String [] args)
     {
@@ -50,19 +52,19 @@ public class Tournament
                 {
                     repeats = val;
                 }
-                if(varName.equals("overwrite"))
-                {
-                    overwriteLeaderboardFile = val;
-                }
                 if(varName.equals("debug"))
                 {
                     debug = val;
+                }
+                if(varName.equals("verbose"))
+                {
+                    verbose = val;
                 }
             }
         }
         catch(FileNotFoundException e)
         {
-            	System.err.println(settingsFile + " not found, using default settings.");
+            System.err.println(settingsFile + " not found, using default settings.");
         }
         
         ArrayList<Player> players = new ArrayList<Player>();
@@ -71,114 +73,130 @@ public class Tournament
             Scanner playerlist = new Scanner(new File(playerFile));
             while(playerlist.hasNextLine())
             {
-                Scanner entry = new Scanner(playerlist.nextLine());
-                String botName = entry.next().trim();
-                String botSource = entry.next().trim();
-                players.add(Parser.parseFile(botName, botSource));
+                String line = playerlist.nextLine().trim();
+                if(line.length() > 0)
+                {
+                    Scanner entry = new Scanner(line);
+                    String botName = entry.next().trim();
+                    String botSource = entry.next().trim();
+                    System.err.println("Loading " + botName + " from " + botSource);
+                    players.add(Parser.parseFile(botName, botSource, verbose > 0));
+                }
             }
         }
         catch(FileNotFoundException e)
         {
-		System.err.println(playerFile + " not found, aborting.");
-		return;
+            System.err.println(playerFile + " not found, aborting.");
+            return;
         }
         
         
-        final Map<String,Integer>  score = new HashMap<String,Integer>();
+        final Map<String,Integer> score = new HashMap<String,Integer>();
         
         for(Player p : players)
         {
             score.put(p.getName(), 0);
         }
         
+        Map<String,Integer> matchResults = new HashMap<String,Integer>();
+        
         try{
-            Scanner oldBoard = new Scanner(new File(leaderFile));
-            while(oldBoard.hasNextLine())
+            Scanner loadResults = new Scanner(new File(saveFile));
+            while(loadResults.hasNextLine())
             {
-                int oldScore = oldBoard.nextInt();
-                oldBoard.next();  //should capture the "-"
-                String name = oldBoard.next().trim();
-                for(Player p : players)
+                String[] fields = loadResults.nextLine().split("\\s+");
+                if(fields.length >= 2)
                 {
-                    if(p.getName().toUpperCase().equals(name.toUpperCase()))
-                    {
-                        score.put(p.getName(), oldScore);
-                        p.isChallenger = false;
-                    }
+                    matchResults.put(fields[0], Integer.decode(fields[1]));
                 }
             }
+            System.err.println(matchResults.size() + " saved results loaded from " + saveFile);
+            loadResults.close();
         }
-        catch(FileNotFoundException e) {
-        	System.err.println(leaderFile + " not found, re-running all matches.");
-        }
-        catch(java.util.NoSuchElementException e) { }
-        
-        System.out.println("Pairwise Results:");
-        for(int i = 0; i < players.size() - 1; i++)
+        catch(FileNotFoundException e)
         {
-            Player p1 = players.get(i);
-            for(int j = i + 1; j < players.size(); j++)
+        	System.err.println(saveFile + " not found, re-running all matches.");
+        }
+
+        try{
+            PrintWriter saveResults = new PrintWriter(new FileWriter(saveFile, true));  // append mode
+            System.out.println("Pairwise Results:");
+            for(int i = 0; i < players.size() - 1; i++)
             {
-                Player p2 = players.get(j);
-                if(p1.isChallenger || p2.isChallenger)
+                Player p1 = players.get(i);
+                String hash1 = p1.getUniqueHash();
+                for(int j = i + 1; j < players.size(); j++)
                 {
-                    Game g = new Game(p1, p2, coreSize, maxTime, debug);
+                    Player p2 = players.get(j);
+                    String hash2 = p2.getUniqueHash();
+    
+                    int hashOrder = hash1.compareTo(hash2);
+                    String matchHash = repeats + ":" +
+                        (hashOrder < 0
+                        ? hash1 + ":" + hash2
+                        : hash2 + ":" + hash1);
+                    
                     int result = 0;
-                    for(int r = 0; r < repeats; r++)
+                    boolean cached = false;
+                    if(matchResults.containsKey(matchHash))
                     {
-                        result += g.run();
+                        result = -hashOrder * matchResults.get(matchHash).intValue();
+                        cached = true;
                     }
-                    if(repeats == 0)
+                    else
                     {
-                        Game g2 = new Game(p2, p1, coreSize, maxTime, debug);
-                        result = g.runAll() - g2.runAll();
+                        Game g = new Game(p1, p2, coreSize, maxTime, debug);
+                        for(int r = 0; r < repeats; r++)
+                        {
+                            result += g.run();
+                        }
+                        if(repeats == 0)
+                        {
+                            Game g2 = new Game(p2, p1, coreSize, maxTime, debug);
+                            result = g.runAll() - g2.runAll();
+                        }
+                        matchResults.put(matchHash, Integer.valueOf(-hashOrder * result));
+                        saveResults.println(matchHash + " " + (-hashOrder * result) + " (" +
+                            (hashOrder < 0
+                            ? p1.getName() + " vs. " + p2.getName()
+                            : p2.getName() + " vs. " + p1.getName()) + ")");
                     }
                     if(result > repeats)
                     {
                         score.put(p1.getName(), score.get(p1.getName()) + 2);
-                        System.out.println(p1.getName() +" "+ p2.getName());
+                        System.out.println(p1.getName() +" > "+ p2.getName() + (cached ? " (cached)" : ""));
                     }
                     else if(result < repeats)
                     {
                         score.put(p2.getName(), score.get(p2.getName()) + 2);
-                        System.out.println(p2.getName() +" "+ p1.getName());
+                        System.out.println(p2.getName() +" > "+ p1.getName() + (cached ? " (cached)" : ""));
                     }
                     else
                     {
                         score.put(p1.getName(), score.get(p1.getName()) + 1);
                         score.put(p2.getName(), score.get(p2.getName()) + 1);
-                        System.out.println(p2.getName() +" = "+ p1.getName());
+                        System.out.println(p2.getName() +" = "+ p1.getName() + (cached ? " (cached)" : ""));
                     }
                 }
             }
+            saveResults.close();
         }
+        catch(IOException e)
+        {
+            System.err.println("Cannot append new results to " + saveFile + ": " + e);
+            return;
+        }
+
         String[] playerNames = score.keySet().toArray(new String[score.keySet().size()]);
         Arrays.sort(playerNames, new Comparator<String>() {
             public int compare(String a, String b) {
                 return score.get(b).compareTo(score.get(a));
             }
         });
-        
         System.out.println("Leaderboard:");
         for(String p : playerNames)
         {
             System.out.printf("%5d - %-40s%n",score.get(p),p);
-        }
-        if(overwriteLeaderboardFile > 0)
-        {
-            try
-            {
-                PrintWriter newBoard = new PrintWriter(new File(leaderFile));
-                for(String p : playerNames)
-                {
-                    newBoard.printf("%5d - %-40s%n",score.get(p),p);
-                }
-                newBoard.close();
-            }
-            catch(FileNotFoundException e)
-            {
-                System.err.println("Warning: unable to save leaderboard in " + leaderFile + ": " + e);
-            }
         }
         
         long endTime = System.nanoTime();

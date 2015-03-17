@@ -36,7 +36,7 @@ public class Parser
         }
         return 0;
     }
-    public static Player parseFile(String name, String fileName)
+    public static Player parseFile(String name, String fileName, boolean verbose)
     {
         Player bot = new Player(name);
         String data = "";
@@ -44,41 +44,42 @@ public class Parser
             data = new Scanner(new File(fileName)).useDelimiter("\\Z").next();
         }
         catch(Exception e){
-            System.out.println("Problem reading file " + fileName);
+            System.err.println("Problem reading file " + fileName);
             bot.addLine("dat","0","0");
             return bot;
         }
         ArrayList<String> lines = new ArrayList<String>(Arrays.asList(data.split(String.format("%n"))));
         ArrayList< ArrayList<String>> commands = new ArrayList<ArrayList<String>>();
-        System.out.println("Original source of " + name);
+        
+        if(verbose) System.err.println("Original source of " + name);
         for(int i = 0; i < lines.size(); i++)
         {
             String line = lines.get(i);
-            System.out.println(line);
+            if(verbose) System.err.println(line);
             line = line.trim().replaceAll(","," ").replaceAll("\\s+", " ").toUpperCase();
             String[] fields = line.split(" ");
             commands.add(new ArrayList<String>(Arrays.asList(line.split(" "))));
-            //System.out.println("Checkpoint 1");
+            //System.err.println("Checkpoint 1");
         }
-        //System.out.println("Checkpoint 2");
+        //System.err.println("Checkpoint 2");
         for(int i = 0; i < commands.size(); i++)
         {
             ArrayList<String> command = commands.get(i);
-            //System.out.println("Checkpoint 3");
+            //System.err.println("Checkpoint 3");
             if(command.size() == 4)
             {
                 String lineLabel = command.get(0).toLowerCase();
                 command.remove(0);
-                //System.out.println("Checkpoint 4");
+                //System.err.println("Checkpoint 4");
                 for(int j = 0; j < commands.size(); j++)
                 {
                     ArrayList<String> command2 = commands.get(j);
                     String field = command2.get(command2.size()-2).toLowerCase();
-                    //System.out.println("Checkpoint 5");
+                    //System.err.println("Checkpoint 5");
                     if(field.equals(lineLabel))
                     {
                         command2.set(command2.size()-2, String.valueOf(i - j));
-                        //System.out.println("Checkpoint 6");
+                        //System.err.println("Checkpoint 6");
                     }
                     if(field.equals("#" + lineLabel))
                     {
@@ -91,11 +92,11 @@ public class Parser
                     
                     
                     field = command2.get(command2.size()-1).toLowerCase();
-                    //System.out.println("Checkpoint 5");
+                    //System.err.println("Checkpoint 5");
                     if(field.equals(lineLabel))
                     {
                         command2.set(command2.size()-1, String.valueOf(i - j));
-                        //System.out.println("Checkpoint 6");
+                        //System.err.println("Checkpoint 6");
                     }
                     if(field.equals("#" + lineLabel))
                     {
@@ -108,18 +109,20 @@ public class Parser
                 }
             }
         }
-        System.out.println("Preprocessed source of " + name);
+        
+        if(verbose) System.err.println("Preprocessed source of " + name);
         for(ArrayList<String> command : commands)
         {
             bot.addLine(command.get(0),command.get(1),command.get(2));
-            System.out.println(command.get(0) + " " + command.get(1) + " " + command.get(2));
+            if(verbose) System.err.println(command.get(0) + " " + command.get(1) + " " + command.get(2));
         }
-        System.out.println("Compiled code of " + name);
+        if(verbose) System.err.println("Compiled code of " + name);
         for(int [] command : bot.getCode())
         {
-            System.out.println(command[0] + " " + command[1] + " " + command[2] + " " + command[3] + " " + command[4]);
+            if(verbose) System.err.println(command[0] + " " + command[1] + " " + command[2] + " " + command[3] + " " + command[4]);
         }
-        System.out.println("Hash of " + name + ": " + bot.getUniqueHash());
+        if(verbose) System.err.println("Hash of " + name + ": " + bot.getUniqueHash());
+
         return bot;
     }
 }
