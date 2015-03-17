@@ -12,34 +12,29 @@ import java.io.File;
 public class Parser
 {
     private static HashMap<String, Integer> opMap = new HashMap<String, Integer>(){{
-        put("DAT",0);
-        put("DATA",0);
-        put("MOV",1);
-        put("MOVE",1);
-        put("CPY",1);
-        put("COPY",1);
-        put("ADD",2);
-        put("SUB",3);
-        put("SUBTRACT",3);
-        put("JMP",4);
-        put("JUMP",4);
-        put("JMZ",5);
-        put("CMP",6);
-        put("COMPARE",6);
-        put("SEQ",6);
+        put("DAT",  Instruction.OP_DAT);
+        put("DATA", Instruction.OP_DAT);
+        put("MOV",  Instruction.OP_MOV);
+        put("MOVE", Instruction.OP_MOV);
+        put("CPY",  Instruction.OP_MOV);
+        put("COPY", Instruction.OP_MOV);
+        put("ADD",  Instruction.OP_ADD);
+        put("SUB",  Instruction.OP_SUB);
+        put("SUBTRACT", Instruction.OP_SUB);
+        put("JMP",  Instruction.OP_JMP);
+        put("JUMP", Instruction.OP_JMP);
+        put("JMZ",  Instruction.OP_JMZ);
+        put("CMP",  Instruction.OP_CMP);
+        put("COMPARE",  Instruction.OP_CMP);
+        put("SEQ",  Instruction.OP_CMP);
     }};
-    public static final int MODE_IMM = 0, MODE_DIR = 1, MODE_IND = 2;
-    public static final int modeBits = 2;
-    public static int opEncode(String opcode, int modeA, int modeB)
+    public static int opEncode(String opcode)
     {
-        int op = 0;
         if(opMap.containsKey(opcode))
         {
-            op = opMap.get(opcode);
+            return opMap.get(opcode);
         }
-        modeA &= (1 << modeBits)-1;
-        modeB &= (1 << modeBits)-1;
-        return (op << (modeBits*2)) + (modeA << modeBits) + modeB;
+        return 0;
     }
     public static Player parseFile(String name, String fileName, boolean verbose)
     {
@@ -122,9 +117,9 @@ public class Parser
             if(verbose) System.err.println(command.get(0) + " " + command.get(1) + " " + command.get(2));
         }
         if(verbose) System.err.println("Compiled code of " + name);
-        for(int [] command : bot.getCode())
+        for(Instruction command : bot.getCode())
         {
-            if(verbose) System.err.println(command[0] + " " + command[1] + " " + command[2]);
+            if(verbose) System.err.println(command.getOpcode() + " " + command.getMode1() + " " + command.getMode2() + " " + command.field1 + " " + command.field2);
         }
         if(verbose) System.err.println("Hash of " + name + ": " + bot.getUniqueHash());
 

@@ -16,12 +16,12 @@ public class Game
     final int coreSizeM1;
     final int maxTime;
     final int debug;
-    int[][] core;
+    Instruction[] core;
     int offset1;
     int offset2;
     Random rand;
-    ArrayList<int[]> p1code;
-    ArrayList<int[]> p2code;
+    ArrayList<Instruction> p1code;
+    ArrayList<Instruction> p2code;
     int p1size;
     int p2size;
     public Game(Player A, Player B, int coreSize, int maxTime, int debug)
@@ -41,7 +41,6 @@ public class Game
         this.coreSizeM1 = coreSize - 1;
         this.maxTime = maxTime / 2;
         this.debug = debug;
-        core = new int[coreSize][5];
         rand = new Random();
         p1code =  p1.getCode();
         p1size = p1code.size();
@@ -78,30 +77,29 @@ public class Game
         {
             System.out.println("New game between " + p1.getName() + " and " + p2.getName() + " with offset " + deltaOffset + ":");
         }
-        core = new int[coreSize][3];
         //offset1 = rand.nextInt(coreSize);
         offset1 = 0;
+        core = new Instruction[coreSize];
         for(int i = 0; i != p1size; i++)
         {
-            int[] line = p1code.get(i);
+            Instruction line = p1code.get(i);
             int loc = (offset1 + i) & coreSizeM1;
-            core[loc][0] = line[0];
-            core[loc][1] = line[1];
-            core[loc][2] = line[2];
+            core[loc] = new Instruction(line);
         }
         offset2 = offset1 + p1size + deltaOffset;
         for(int i = 0; i != p2size; i++)
         {
-            int[] line = p2code.get(i);
+            Instruction line = p2code.get(i);
             int loc = (offset2 + i) & coreSizeM1;
-            core[loc][0] = line[0];
-            core[loc][1] = line[1];
-            core[loc][2] = line[2];
+            core[loc] = new Instruction(line);
+        }
+        for(int i = 0; i < coreSize; i++)
+        {
+            if(core[i] == null) core[i] = new Instruction();
         }
              
         int p1loc = offset1 & coreSizeM1;
         int p2loc = offset2 & coreSizeM1;
-        int minValidOp = (1 << (Parser.modeBits*2));
         for(int time = 0; time != maxTime; time++)
         {
             if(debug != 0)
@@ -111,11 +109,12 @@ public class Game
                 System.out.println("offset " + offset1);
             }
             
-            if(core[p1loc][0] < minValidOp)
+            Instruction p1instr = core[p1loc];
+            if(p1instr.packedOp < Instruction.minValidOp)
             {
                 return 0;
             }
-            p1loc = execute(p1loc, offset1);
+            p1loc = execute(p1instr, p1loc, offset1);
             
             if(debug != 0)
             {
@@ -123,34 +122,34 @@ public class Game
                 System.out.println("p2loc " + p2loc);
                 System.out.println("offset " + offset2);
             }
-            if(core[p2loc][0] < minValidOp)
+            Instruction p2instr = core[p2loc];
+            if(p2instr.packedOp < Instruction.minValidOp)
             {
                 return 2;
             }
-            p2loc = execute(p2loc, offset2);
+            p2loc = execute(p2instr, p2loc, offset2);
             
         }
         return 1;
     }
-    public int execute(int ploc, int offset)
+    public int execute(Instruction curr, int ploc, int offset)
     {
-        int[] curr = core[ploc];
-        int op = curr[0], line1 = curr[1], line2 = curr[2];
-        int opcode = op >> (Parser.modeBits*2), mode1 = (op >> Parser.modeBits), mode2 = op;
-        mode1 &= (1 << Parser.modeBits)-1;
-        mode2 &= (1 << Parser.modeBits)-1;
+        int op = curr.packedOp, line1 = curr.field1, line2 = curr.field2;
+        int opcode = op >> (Instruction.modeBits*2), mode1 = (op >> Instruction.modeBits), mode2 = op;
+        mode1 &= Instruction.modeMask;
+        mode2 &= Instruction.modeMask;
 
         switch(mode1)
         {
-        case Parser.MODE_IMM:
+        case Instruction.MODE_IMM:
             line1 += offset;
             break;
-        case Parser.MODE_DIR:
+        case Instruction.MODE_DIR:
             line1 += ploc;
             break;
-        case Parser.MODE_IND:
+        case Instruction.MODE_IND:
             line1 += ploc;
-            line1 += core[line1 & coreSizeM1][1];
+            line1 += core[line1 & coreSizeM1].field1;
             break;
         default:
             throw new IllegalStateException("invalid A addressing mode " + mode1 + " (decoded from " + op + ") on line " + ploc);
@@ -158,15 +157,15 @@ public class Game
         
         switch(mode2)
         {
-        case Parser.MODE_IMM:
+        case Instruction.MODE_IMM:
             line2 += offset;
             break;
-        case Parser.MODE_DIR:
+        case Instruction.MODE_DIR:
             line2 += ploc;
             break;
-        case Parser.MODE_IND:
+        case Instruction.MODE_IND:
             line2 += ploc;
-            line2 += core[line2 & coreSizeM1][2];
+            line2 += core[line2 & coreSizeM1].field2;
             break;
         default:
             throw new IllegalStateException("invalid B addressing mode " + mode2 + " (decoded from " + op + ") on line " + ploc);
@@ -178,25 +177,25 @@ public class Game
 
         switch(opcode)
         {
-        case 1: // MOV
-            core[line2][0] = core[line1][0];
-            core[line2][1] = core[line1][1];
-            core[line2][2] = core[line1][2];
+        case Instruction.OP_MOV:
+            core[line2].packedOp = core[line1].packedOp;
+            core[line2].field1 = core[line1].field1;
+            core[line2].field2 = core[line1].field2;
             return next;
-        case 2: // ADD
-            core[line2][1] += core[line1][1];
-            core[line2][2] += core[line1][2];
+        case Instruction.OP_ADD:
+            core[line2].field1 += core[line1].field1;
+            core[line2].field2 += core[line1].field2;
             return next;
-        case 3: // SUB
-            core[line2][1] -= core[line1][1];
-            core[line2][2] -= core[line1][2];
+        case Instruction.OP_SUB:
+            core[line2].field1 -= core[line1].field1;
+            core[line2].field2 -= core[line1].field2;
             return next;
-        case 4: // JMP
+        case Instruction.OP_JMP:
             return line1;
-        case 5: // JMZ
-            return (core[line2][1] == 0 && core[line2][2] == 0 ? line1 : next);
-        case 6: // CMP
-            return next + (core[line1][1] != core[line2][1] || core[line1][2] != core[line2][2] ? 1 : 0);
+        case Instruction.OP_JMZ:
+            return (core[line2].field1 == 0 && core[line2].field2 == 0 ? line1 : next);
+        case Instruction.OP_CMP:
+            return next + (core[line1].field1 != core[line2].field1 || core[line1].field2 != core[line2].field2 ? 1 : 0);
         default:
             throw new IllegalStateException("invalid opcode " + opcode + " (decoded from " + op + ") on line " + ploc);
         }
@@ -204,19 +203,15 @@ public class Game
     public void printCore(int p1loc, int p2loc)
     {
         int dupCount = 0;
-        int[] dupLine = new int[]{0,0,0};
+        Instruction dupLine = new Instruction();
         for(int i = 0; i < core.length; i++)
         {
-            int[] line = core[i];
-            if(Arrays.equals(line, dupLine) && i != p1loc && i != p2loc)
+            Instruction line = core[i];
+            if(line.equals(dupLine) && i != p1loc && i != p2loc)
             {
                 if(dupCount == 0)
                 {
-                    for(int val : line)
-                    {
-                        System.out.printf("%5d ",val);
-                    }
-                    System.out.println();
+                    System.out.println(line);
                 }
                 dupCount++;
             }
@@ -224,27 +219,20 @@ public class Game
             {
                 if(dupCount == 2)
                 {
-                    for(int val : dupLine)
-                    {
-                        System.out.printf("%5d ",val);
-                    }
-                    System.out.println();
+                    System.out.println(dupLine);
                 }
                 else if(dupCount > 2)
                 {
                     System.out.println("    " + (dupCount - 1) + " lines skipped.");
                 }
-                for(int val : line)
-                {
-                    System.out.printf("%5d ",val);
-                }
+                System.out.print(line);
                 if(i == p1loc)
                 {
-                    System.out.print(" <- 1");
+                    System.out.print("\t<- 1");
                 }
                 if(i == p2loc)
                 {
-                    System.out.print(" <- 2");
+                    System.out.print("\t<- 2");
                 }
                 System.out.println();
                 dupLine = line;
@@ -253,11 +241,7 @@ public class Game
         }
         if(dupCount == 2)
         {
-            for(int val : dupLine)
-            {
-                System.out.printf("%5d ",val);
-            }
-            System.out.println();
+            System.out.println(dupLine);
         }
         else if(dupCount > 2)
         {

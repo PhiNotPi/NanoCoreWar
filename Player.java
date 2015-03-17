@@ -12,30 +12,27 @@ import java.security.MessageDigest;
 public class Player
 {
     private String name, hash;
-    private ArrayList<int []> codeList;
-    
-    private static final int opBits = 3, modeBits = 2;
-    
+    private ArrayList<Instruction> codeList;
+        
     public Player(String name)
     {
         this.name = name;
-        codeList = new ArrayList<int []>();
+        codeList = new ArrayList<Instruction>();
     }
     
     public void addLine(String opcode, String fieldA, String fieldB)
     {
-        int[] command = new int[3];
-        int modeA = Parser.MODE_DIR;
+        int modeA = Instruction.MODE_DIR;
         int valA = 0;
         fieldA = fieldA.trim();
         if(fieldA.charAt(0) == '#')
         {
-            modeA = Parser.MODE_IMM;
+            modeA = Instruction.MODE_IMM;
             fieldA = fieldA.substring(1);
         }
         else if(fieldA.charAt(0) == '@')
         {
-            modeA = Parser.MODE_IND;
+            modeA = Instruction.MODE_IND;
             fieldA = fieldA.substring(1);
         }
         try
@@ -46,17 +43,17 @@ public class Player
         {
             System.out.println("Player " + name + " had a problem at line " + codeList.size() + ", field A.");
         }
-        int modeB = Parser.MODE_DIR;
+        int modeB = Instruction.MODE_DIR;
         int valB = 0;
         fieldB = fieldB.trim();
         if(fieldB.charAt(0) == '#')
         {
-            modeB = Parser.MODE_IMM;
+            modeB = Instruction.MODE_IMM;
             fieldB = fieldB.substring(1);
         }
         else if(fieldB.charAt(0) == '@')
         {
-            modeB = Parser.MODE_IND;
+            modeB = Instruction.MODE_IND;
             fieldB = fieldB.substring(1);
         }
         try
@@ -67,13 +64,12 @@ public class Player
         {
             System.out.println("Player " + name + " had a problem at line " + codeList.size() + ", field B");
         }
-        command[0] = Parser.opEncode(opcode.trim().toUpperCase(), modeA, modeB);
-        command[1] = valA;
-        command[2] = valB;
+        int op = Parser.opEncode(opcode.trim().toUpperCase());
+        Instruction command = new Instruction(op, modeA, modeB, valA, valB);
         codeList.add(command);
         hash = null;  // invalidate old hash
     }
-    public ArrayList<int[]> getCode()
+    public ArrayList<Instruction> getCode()
     {
         return codeList;
     }
@@ -86,11 +82,13 @@ public class Player
         if (hash != null) return hash;
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
-	        for (int [] command : codeList)
+	        for (Instruction command : codeList)
 	        {
-                ByteBuffer byteBuf = ByteBuffer.allocate(command.length * 4);
+                ByteBuffer byteBuf = ByteBuffer.allocate(3 * 4);
                 IntBuffer intBuf = byteBuf.asIntBuffer();
-                intBuf.put(command);
+                intBuf.put(command.packedOp);
+                intBuf.put(command.field1);
+                intBuf.put(command.field2);
                 md.update(byteBuf.array());
             }
             byte[] digest = md.digest();
