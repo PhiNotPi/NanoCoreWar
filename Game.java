@@ -174,28 +174,34 @@ public class Game
         line1 &= coreSizeM1;
         line2 &= coreSizeM1;
         int next = (ploc+1) & coreSizeM1;
+        Instruction i1, i2;
 
         switch(opcode)
         {
         case Instruction.OP_MOV:
-            core[line2].packedOp = core[line1].packedOp;
-            core[line2].field1 = core[line1].field1;
-            core[line2].field2 = core[line1].field2;
+            i1 = core[line1]; i2 = core[line2];
+            i2.packedOp = i1.packedOp;
+            i2.field1 = i1.field1;
+            i2.field2 = i1.field2;
             return next;
         case Instruction.OP_ADD:
-            core[line2].field1 += core[line1].field1;
-            core[line2].field2 += core[line1].field2;
+            i1 = core[line1]; i2 = core[line2];
+            i2.field1 += i1.field1;
+            i2.field2 += i1.field2;
             return next;
         case Instruction.OP_SUB:
-            core[line2].field1 -= core[line1].field1;
-            core[line2].field2 -= core[line1].field2;
+            i1 = core[line1]; i2 = core[line2];
+            i2.field1 -= i1.field1;
+            i2.field2 -= i1.field2;
             return next;
         case Instruction.OP_JMP:
             return line1;
         case Instruction.OP_JMZ:
-            return (core[line2].field1 == 0 && core[line2].field2 == 0 ? line1 : next);
+            i2 = core[line2];
+            return (i2.field1 == 0 && i2.field2 == 0 ? line1 : next);
         case Instruction.OP_CMP:
-            return next + (core[line1].field1 != core[line2].field1 || core[line1].field2 != core[line2].field2 ? 1 : 0);
+            i1 = core[line1]; i2 = core[line2];
+            return next + (i1.field1 != i2.field1 || i1.field2 != i2.field2 ? 1 : 0);
         default:
             throw new IllegalStateException("invalid opcode " + opcode + " (decoded from " + op + ") on line " + ploc);
         }
