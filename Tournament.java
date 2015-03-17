@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Scanner;
 import java.io.PrintWriter;
 /**
@@ -54,7 +55,7 @@ public class Tournament
                 }
             }
         }
-        catch(Exception e)
+        catch(FileNotFoundException e)
         {
             
         }
@@ -71,7 +72,7 @@ public class Tournament
                 players.add(Parser.parseFile(botName, botSource));
             }
         }
-        catch(Exception e)
+        catch(FileNotFoundException e)
         {
             
         }
@@ -101,10 +102,9 @@ public class Tournament
                 }
             }
         }
-        catch(Exception e)
-        {
-            
-        }
+        catch(FileNotFoundException e) { }
+        catch(java.util.NoSuchElementException e) { }
+        
         System.out.println("Pairwise Results:");
         for(int i = 0; i < players.size() - 1; i++)
         {
@@ -167,7 +167,7 @@ public class Tournament
                 }
                 newBoard.close();
             }
-            catch(Exception e)
+            catch(FileNotFoundException e)
             {
                 
             }
