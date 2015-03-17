@@ -130,7 +130,7 @@ public class Tournament
                     Player p2 = players.get(j);
                     String hash2 = p2.getUniqueHash();
     
-                    int hashOrder = hash1.compareTo(hash2);
+                    int hashOrder = Integer.signum(hash1.compareTo(hash2));
                     String matchHash = repeats + ":" +
                         (hashOrder < 0
                         ? hash1 + ":" + hash2
