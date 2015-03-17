@@ -21,13 +21,18 @@ public class Tournament
     static int repeats = 0; //number of times a battle is played between each pair of contestants
     static int overwriteLeaderboardFile = 0;
     static int debug = 0;
+    
+    static final String settingsFile = "settings.txt";
+    static final String playerFile = "playerlist.txt";
+    static final String leaderFile = "leaderboard.txt";
+    
     public static void main(String [] args)
     {
         long startTime = System.nanoTime();
         
         
         try{
-            Scanner settings = new Scanner(new File("settings.txt"));
+            Scanner settings = new Scanner(new File(settingsFile));
             while(settings.hasNextLine())
             {
                 Scanner setting = new Scanner(settings.nextLine());
@@ -57,13 +62,13 @@ public class Tournament
         }
         catch(FileNotFoundException e)
         {
-            
+            	System.err.println(settingsFile + " not found, using default settings.");
         }
         
         ArrayList<Player> players = new ArrayList<Player>();
         
         try{
-            Scanner playerlist = new Scanner(new File("playerlist.txt"));
+            Scanner playerlist = new Scanner(new File(playerFile));
             while(playerlist.hasNextLine())
             {
                 Scanner entry = new Scanner(playerlist.nextLine());
@@ -74,7 +79,8 @@ public class Tournament
         }
         catch(FileNotFoundException e)
         {
-            
+		System.err.println(playerFile + " not found, aborting.");
+		return;
         }
         
         
@@ -86,7 +92,7 @@ public class Tournament
         }
         
         try{
-            Scanner oldBoard = new Scanner(new File("leaderboard.txt"));
+            Scanner oldBoard = new Scanner(new File(leaderFile));
             while(oldBoard.hasNextLine())
             {
                 int oldScore = oldBoard.nextInt();
@@ -102,7 +108,9 @@ public class Tournament
                 }
             }
         }
-        catch(FileNotFoundException e) { }
+        catch(FileNotFoundException e) {
+        	System.err.println(leaderFile + " not found, re-running all matches.");
+        }
         catch(java.util.NoSuchElementException e) { }
         
         System.out.println("Pairwise Results:");
@@ -160,7 +168,7 @@ public class Tournament
         {
             try
             {
-                PrintWriter newBoard = new PrintWriter(new File("leaderboard.txt"));
+                PrintWriter newBoard = new PrintWriter(new File(leaderFile));
                 for(String p : playerNames)
                 {
                     newBoard.printf("%5d - %-40s%n",score.get(p),p);
@@ -169,7 +177,7 @@ public class Tournament
             }
             catch(FileNotFoundException e)
             {
-                
+                System.err.println("Warning: unable to save leaderboard in " + leaderFile + ": " + e);
             }
         }
         
