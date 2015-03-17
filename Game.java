@@ -176,14 +176,14 @@ public class Game
                 break;
             case Instruction.OP_JMZ:
                 i2 = core[line2];
-                if(i2.field1 == 0 && i2.field2 == 0)
+                if(i2 == Instruction.DAT00 || (i2.field1 == 0 && i2.field2 == 0))
                 {
                     ploc = line1 - 1;
                 }
                 break;
             case Instruction.OP_CMP:
                 i1 = core[line1]; i2 = core[line2];
-                if(i1.field1 != i2.field1 || i1.field2 != i2.field2)
+                if(i1 != i2 && (i1.field1 != i2.field1 || i1.field2 != i2.field2))
                 {
                     ploc++;
                 }
