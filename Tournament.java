@@ -13,8 +13,8 @@ import java.io.FileWriter;
 /**
  * This is the main controller for the Nano Core War KOTH
  * 
- * @author PhiNotPi
- * @version 3/08/15
+ * @author PhiNotPi, Ilmari Karonen
+ * @version 3/17/15
  */
 public class Tournament
 {

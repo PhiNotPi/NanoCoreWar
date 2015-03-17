@@ -28,13 +28,18 @@ public class Parser
         put("COMPARE",6);
         put("SEQ",6);
     }};
-    public static int opEncode(String opcode)
+    public static final int MODE_IMM = 0, MODE_DIR = 1, MODE_IND = 2;
+    public static final int modeBits = 2;
+    public static int opEncode(String opcode, int modeA, int modeB)
     {
+        int op = 0;
         if(opMap.containsKey(opcode))
         {
-            return opMap.get(opcode);
+            op = opMap.get(opcode);
         }
-        return 0;
+        modeA &= (1 << modeBits)-1;
+        modeB &= (1 << modeBits)-1;
+        return (op << (modeBits*2)) + (modeA << modeBits) + modeB;
     }
     public static Player parseFile(String name, String fileName, boolean verbose)
     {
@@ -119,7 +124,7 @@ public class Parser
         if(verbose) System.err.println("Compiled code of " + name);
         for(int [] command : bot.getCode())
         {
-            if(verbose) System.err.println(command[0] + " " + command[1] + " " + command[2] + " " + command[3] + " " + command[4]);
+            if(verbose) System.err.println(command[0] + " " + command[1] + " " + command[2]);
         }
         if(verbose) System.err.println("Hash of " + name + ": " + bot.getUniqueHash());
 
