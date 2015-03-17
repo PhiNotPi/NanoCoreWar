@@ -80,26 +80,23 @@ public class Game
         int coreSize = this.coreSize, coreSizeM1 = coreSize-1;
 
         Instruction[] core = new Instruction[coreSize];
+        for(int i = 0; i < coreSize; i++)
+        {
+            core[i] = Instruction.DAT00;
+        }
 
         int offset1 = 0;
         for(int i = 0; i != p1size; i++)
         {
-            Instruction line = p1code.get(i);
             int loc = (offset1 + i) & coreSizeM1;
-            core[loc] = new Instruction(line);
+            core[loc] = p1code.get(i);
         }
 
         int offset2 = offset1 + p1size + deltaOffset;
         for(int i = 0; i != p2size; i++)
         {
-            Instruction line = p2code.get(i);
             int loc = (offset2 + i) & coreSizeM1;
-            core[loc] = new Instruction(line);
-        }
-
-        for(int i = 0; i < coreSize; i++)
-        {
-            if(core[i] == null) core[i] = new Instruction();
+            core[loc] = p2code.get(i);
         }
              
         int poffset = offset1 & coreSizeM1, ploc = poffset;
@@ -164,20 +161,15 @@ public class Game
             switch(opcode)
             {
             case Instruction.OP_MOV:
-                i1 = core[line1]; i2 = core[line2];
-                i2.packedOp = i1.packedOp;
-                i2.field1 = i1.field1;
-                i2.field2 = i1.field2;
+                core[line2] = core[line1];
                 break;
             case Instruction.OP_ADD:
                 i1 = core[line1]; i2 = core[line2];
-                i2.field1 += i1.field1;
-                i2.field2 += i1.field2;
+                core[line2] = new Instruction(i2.packedOp, i2.field1 + i1.field1, i2.field2 + i1.field2);
                 break;
             case Instruction.OP_SUB:
                 i1 = core[line1]; i2 = core[line2];
-                i2.field1 -= i1.field1;
-                i2.field2 -= i1.field2;
+                core[line2] = new Instruction(i2.packedOp, i2.field1 - i1.field1, i2.field2 - i1.field2);
                 break;
             case Instruction.OP_JMP:
                 ploc = line1 - 1;  // will be incremented by one below
@@ -213,7 +205,7 @@ public class Game
         int time = (step >> 1), turn = (step & 1);
         
         int dupCount = 0;
-        Instruction dupLine = new Instruction();
+        Instruction dupLine = Instruction.DAT00;
         for(int i = 0; i < core.length; i++)
         {
             Instruction line = core[i];

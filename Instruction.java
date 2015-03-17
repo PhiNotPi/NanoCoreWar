@@ -6,7 +6,7 @@
  */
 public final class Instruction
 {
-    public int packedOp, field1, field2;
+    public final int packedOp, field1, field2;
     
     public static final int OP_DAT = 0, OP_MOV = 1, OP_ADD = 2, OP_SUB = 3, OP_JMP = 4, OP_JMZ = 5, OP_CMP = 6;
     public static final int MODE_IMM = 0, MODE_DIR = 1, MODE_IND = 2;
@@ -17,11 +17,9 @@ public final class Instruction
     public static final int modeBits = 2;
     public static final int modeMask = (1 << modeBits)-1;
     public static final int minValidOp = (1 << (2*modeBits));
+
+    public static final Instruction DAT00 = new Instruction(0, 0, 0);
     
-    public Instruction()
-    {
-        this.packedOp = this.field1 = this.field2 = 0;
-    }
     public Instruction(int packedOp, int field1, int field2)
     {
         this.packedOp = packedOp;
