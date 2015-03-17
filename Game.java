@@ -16,7 +16,6 @@ public class Game
     final int coreSizeM1;
     final int maxTime;
     final int debug;
-    Instruction[] core;
     int offset1;
     int offset2;
     Random rand;
@@ -77,62 +76,56 @@ public class Game
         {
             System.out.println("New game between " + p1.getName() + " and " + p2.getName() + " with offset " + deltaOffset + ":");
         }
-        //offset1 = rand.nextInt(coreSize);
-        offset1 = 0;
-        core = new Instruction[coreSize];
+
+        int coreSize = this.coreSize, coreSizeM1 = coreSize-1;
+
+        Instruction[] core = new Instruction[coreSize];
+
+        int offset1 = 0;
         for(int i = 0; i != p1size; i++)
         {
             Instruction line = p1code.get(i);
             int loc = (offset1 + i) & coreSizeM1;
             core[loc] = new Instruction(line);
         }
-        offset2 = offset1 + p1size + deltaOffset;
+
+        int offset2 = offset1 + p1size + deltaOffset;
         for(int i = 0; i != p2size; i++)
         {
             Instruction line = p2code.get(i);
             int loc = (offset2 + i) & coreSizeM1;
             core[loc] = new Instruction(line);
         }
+
         for(int i = 0; i < coreSize; i++)
         {
             if(core[i] == null) core[i] = new Instruction();
         }
              
-        int p1loc = offset1 & coreSizeM1;
-        int p2loc = offset2 & coreSizeM1;
-        for(int time = 0; time != maxTime; time++)
+        int curOffset = offset1 & coreSizeM1, curLoc = curOffset;
+        int altOffset = offset2 & coreSizeM1, altLoc = altOffset;
+
+        int maxSteps = maxTime * 2;
+        for(int step = 0; step != maxSteps; step++)
         {
             if(debug != 0)
             {
-                printCore(p1loc,p2loc);
-                System.out.println("p1loc " + p1loc);
-                System.out.println("offset " + offset1);
+                printCore(core, curLoc, altLoc, step);
             }
             
-            Instruction p1instr = core[p1loc];
-            if(p1instr.packedOp < Instruction.minValidOp)
+            Instruction curInsrt = core[curLoc];
+            if(curInsrt.packedOp < Instruction.minValidOp)
             {
-                return 0;
+                return ((step & 1) == 0 ? 0 : 2);
             }
-            p1loc = execute(p1instr, p1loc, offset1);
+            curLoc = execute(core, curInsrt, curLoc, curOffset);
             
-            if(debug != 0)
-            {
-                printCore(p1loc,p2loc);
-                System.out.println("p2loc " + p2loc);
-                System.out.println("offset " + offset2);
-            }
-            Instruction p2instr = core[p2loc];
-            if(p2instr.packedOp < Instruction.minValidOp)
-            {
-                return 2;
-            }
-            p2loc = execute(p2instr, p2loc, offset2);
-            
+            int tmpLoc = curLoc; curLoc = altLoc; altLoc = tmpLoc;            
+            int tmpOffset = curOffset; curOffset = altOffset; altOffset = tmpOffset;            
         }
         return 1;
     }
-    public int execute(Instruction curr, int ploc, int offset)
+    public int execute(Instruction[] core, Instruction curr, int ploc, int offset)
     {
         int op = curr.packedOp, line1 = curr.field1, line2 = curr.field2;
         int opcode = op >> (Instruction.modeBits*2), mode1 = (op >> Instruction.modeBits), mode2 = op;
@@ -206,14 +199,16 @@ public class Game
             throw new IllegalStateException("invalid opcode " + opcode + " (decoded from " + op + ") on line " + ploc);
         }
     }
-    public void printCore(int p1loc, int p2loc)
+    public void printCore(Instruction[] core, int curLoc, int altLoc, int step)
     {
+        int time = (step >> 1), turn = (step & 1);
+        
         int dupCount = 0;
         Instruction dupLine = new Instruction();
         for(int i = 0; i < core.length; i++)
         {
             Instruction line = core[i];
-            if(line.equals(dupLine) && i != p1loc && i != p2loc)
+            if(line.equals(dupLine) && i != curLoc && i != altLoc)
             {
                 if(dupCount == 0)
                 {
@@ -232,13 +227,13 @@ public class Game
                     System.out.println("    " + (dupCount - 1) + " lines skipped.");
                 }
                 System.out.print(line);
-                if(i == p1loc)
+                if(i == curLoc)
                 {
-                    System.out.print("\t<- 1");
+                    System.out.print("\t<- " + (turn == 0 ? 1 : 2));
                 }
-                if(i == p2loc)
+                if(i == altLoc)
                 {
-                    System.out.print("\t<- 2");
+                    System.out.print("\t<- " + (turn == 0 ? 2 : 1));
                 }
                 System.out.println();
                 dupLine = line;
