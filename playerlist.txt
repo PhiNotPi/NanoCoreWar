@@ -1,10 +1,2 @@
 Bob bob.txt
 Sally sally.txt
-Imp imp.txt
-Dwarf dwarf.txt
-CopyPasta copypasta.txt
-Evolved evolved.txt
-FirstTimer firsttimer.txt
-Janitor janitor.txt
-ScanBomber scanbomber.txt
-Slug slug.txt
