@@ -54,15 +54,7 @@ public class Game
         {
             sum += run(i) - 1;
         }
-        if(sum > 0)
-        {
-            return 1;
-        }
-        if(sum < 0)
-        {
-            return -1;
-        }
-        return 0;
+        return sum;
     }
     
     public int run()
