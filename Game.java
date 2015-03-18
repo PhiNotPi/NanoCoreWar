@@ -1,11 +1,12 @@
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.lang.IllegalStateException;
 /**
  * This runs a game of Core Wars between two players.  It can be called mutiple times.
  * 
- * @author PhiNotPi 
- * @version 3/10/15
+ * @author PhiNotPi, Ilmari Karonen
+ * @version 3/17/15
  */
 public class Game
 {
@@ -15,12 +16,11 @@ public class Game
     final int coreSizeM1;
     final int maxTime;
     final int debug;
-    int[][] core;
     int offset1;
     int offset2;
     Random rand;
-    ArrayList<int[]> p1code;
-    ArrayList<int[]> p2code;
+    ArrayList<Instruction> p1code;
+    ArrayList<Instruction> p2code;
     int p1size;
     int p2size;
     public Game(Player A, Player B, int coreSize, int maxTime, int debug)
@@ -40,7 +40,6 @@ public class Game
         this.coreSizeM1 = coreSize - 1;
         this.maxTime = maxTime / 2;
         this.debug = debug;
-        core = new int[coreSize][5];
         rand = new Random();
         p1code =  p1.getCode();
         p1size = p1code.size();
@@ -77,168 +76,146 @@ public class Game
         {
             System.out.println("New game between " + p1.getName() + " and " + p2.getName() + " with offset " + deltaOffset + ":");
         }
-        core = new int[coreSize][5];
-        //offset1 = rand.nextInt(coreSize);
-        offset1 = 0;
+
+        int coreSize = this.coreSize, coreSizeM1 = coreSize-1;
+
+        Instruction[] core = new Instruction[coreSize];
+        for(int i = 0; i < coreSize; i++)
+        {
+            core[i] = Instruction.DAT00;
+        }
+
+        int offset1 = 0;
         for(int i = 0; i != p1size; i++)
         {
-            //System.arraycopy(p1.getCode().get(i), 0, core[(offset1 + i) % coreSize], 0, 5 );
-            int[] line = p1code.get(i);
             int loc = (offset1 + i) & coreSizeM1;
-            core[loc][0] = line[0];
-            core[loc][1] = line[1];
-            core[loc][2] = line[2];
-            core[loc][3] = line[3];
-            core[loc][4] = line[4];
+            core[loc] = p1code.get(i);
         }
-        offset2 = offset1 + p1size + deltaOffset;
+
+        int offset2 = offset1 + p1size + deltaOffset;
         for(int i = 0; i != p2size; i++)
         {
-            //System.arraycopy(p2.getCode().get(i), 0, core[(offset2 + i) % coreSize], 0, 5 );
-            int[] line = p2code.get(i);
             int loc = (offset2 + i) & coreSizeM1;
-            core[loc][0] = line[0];
-            core[loc][1] = line[1];
-            core[loc][2] = line[2];
-            core[loc][3] = line[3];
-            core[loc][4] = line[4];
+            core[loc] = p2code.get(i);
         }
              
-        int p1loc = offset1 & coreSizeM1;
-        int p2loc = offset2 & coreSizeM1;
-        for(int time = 0; time != maxTime; time++)
+        int poffset = offset1 & coreSizeM1, ploc = poffset;
+        int xoffset = offset2 & coreSizeM1, xloc = xoffset;
+
+        int maxSteps = maxTime * 2;
+        for(int step = 0; step != maxSteps; step++)
         {
             if(debug != 0)
             {
-                printCore(p1loc,p2loc);
-                System.out.println("p1loc " + p1loc);
-                System.out.println("offset " + offset1);
+                printCore(core, ploc, xloc, step);
             }
             
-            if(core[p1loc][0] == 0)
+            Instruction curr = core[ploc];
+            int op = curr.packedOp;
+            if(op < Instruction.minValidOp)
             {
-                return 0;
+                return ((step & 1) == 0 ? 0 : 2);
             }
-            p1loc = execute(p1loc, offset1);
             
-            if(debug != 0)
+            int line1 = curr.field1, line2 = curr.field2;
+            int opcode = op >> (Instruction.modeBits*2), mode1 = (op >> Instruction.modeBits), mode2 = op;
+            mode1 &= Instruction.modeMask;
+            mode2 &= Instruction.modeMask;
+
+            switch(mode1)
             {
-                printCore(p1loc,p2loc);
-                System.out.println("p2loc " + p2loc);
-                System.out.println("offset " + offset2);
+            case Instruction.MODE_IMM:
+                line1 += poffset;
+                break;
+            case Instruction.MODE_DIR:
+                line1 += ploc;
+                break;
+            case Instruction.MODE_IND:
+                line1 += ploc;
+                line1 += core[line1 & coreSizeM1].field1;
+                break;
+            default:
+                throw new IllegalStateException("invalid A addressing mode " + mode1 + " (decoded from " + op + ") on line " + ploc);
             }
-            if(core[p2loc][0] == 0)
-            {
-                return 2;
-            }
-            p2loc = execute(p2loc, offset2);
             
+            switch(mode2)
+            {
+            case Instruction.MODE_IMM:
+                line2 += poffset;
+                break;
+            case Instruction.MODE_DIR:
+                line2 += ploc;
+                break;
+            case Instruction.MODE_IND:
+                line2 += ploc;
+                line2 += core[line2 & coreSizeM1].field2;
+                break;
+            default:
+                throw new IllegalStateException("invalid B addressing mode " + mode2 + " (decoded from " + op + ") on line " + ploc);
+            }
+            
+            line1 &= coreSizeM1;
+            line2 &= coreSizeM1;
+            Instruction i1, i2;
+     
+            switch(opcode)
+            {
+            case Instruction.OP_MOV:
+                core[line2] = core[line1];
+                break;
+            case Instruction.OP_ADD:
+                i1 = core[line1]; i2 = core[line2];
+                core[line2] = new Instruction(i2.packedOp, i2.field1 + i1.field1, i2.field2 + i1.field2);
+                break;
+            case Instruction.OP_SUB:
+                i1 = core[line1]; i2 = core[line2];
+                core[line2] = new Instruction(i2.packedOp, i2.field1 - i1.field1, i2.field2 - i1.field2);
+                break;
+            case Instruction.OP_JMP:
+                ploc = line1 - 1;  // will be incremented by one below
+                break;
+            case Instruction.OP_JMZ:
+                i2 = core[line2];
+                if(i2 == Instruction.DAT00 || (i2.field1 == 0 && i2.field2 == 0))
+                {
+                    ploc = line1 - 1;
+                }
+                break;
+            case Instruction.OP_CMP:
+                i1 = core[line1]; i2 = core[line2];
+                if(i1 != i2 && (i1.field1 != i2.field1 || i1.field2 != i2.field2))
+                {
+                    ploc++;
+                }
+                break;
+            default:
+                throw new IllegalStateException("invalid opcode " + opcode + " (decoded from " + op + ") on line " + ploc);
+            }
+            
+            ploc++;
+            ploc &= coreSizeM1;
+           
+            int tmpLoc = ploc; ploc = xloc; xloc = tmpLoc;            
+            int tmpOffset = poffset; poffset = xoffset; xoffset = tmpOffset;            
         }
         return 1;
     }
-    public int execute(int ploc, int offset)
+    public void printCore(Instruction[] core, int ploc, int xloc, int step)
     {
-        int line1 = offset + core[ploc][3];
-        if(core[ploc][1] != 0)
-        {
-            line1 += ploc - offset;
-        }
-        if(core[ploc][1] == 2)
-        {
-            line1 += core[line1 & coreSizeM1][3];
-        }
-        int line2 = offset + core[ploc][4];
-        if(core[ploc][2] != 0)
-        {
-            line2 += ploc - offset;
-        }
-        if(core[ploc][2] == 2)
-        {
-            line2 += core[line2 & coreSizeM1][4];
-        }
-        line1 = line1 & coreSizeM1;
-        line2 = line2 & coreSizeM1;
-        int opcode = core[ploc][0];
-        ploc = (ploc + 1) & coreSizeM1;
-        //String opDescription = "";
-        if(opcode == 1)
-        {
-            core[line2][0] = core[line1][0];
-            core[line2][1] = core[line1][1];
-            core[line2][2] = core[line1][2];
-            core[line2][3] = core[line1][3];
-            core[line2][4] = core[line1][4];
-            return ploc;
-            //opDescription = "Moved from " + line1 + " to " + line2;
-        }
-        if(opcode == 2)
-        {
-                core[line2][3] += core[line1][3];
-                core[line2][4] += core[line1][4];
-                return ploc;
-                //opDescription = "Added " + line1 + " to " + line2;
-        }
-        if(opcode == 3)
-        {
-                core[line2][3] -= core[line1][3];
-                core[line2][4] -= core[line1][4];
-                return ploc;
-                //opDescription = "Subtracted " + line1 + " to " + line2;
-        }
-        if(opcode == 4)
-        {
-                ploc = line1;
-                return ploc;
-                //opDescription = "Jumped to " + line1;
-        }
-        if(opcode == 5)
-        {
-                if(core[line2][3] == 0 && core[line2][4] == 0)
-                {
-                    ploc = line1;
-                    //opDescription = "Jumped to " + line1;
-                }
-                else
-                {
-                    //opDescription = "Did not jump to " + line1;
-                }
-                return ploc;
-        }
-        if(opcode == 6)
-        {
-            if(core[line1][3] == core[line2][3] && core[line1][4] == core[line2][4])
-            {
-                //opDescription = "Did not skip because " + line1 + " and " + line2 + " were equal.";
-            }
-            else
-            {
-                ploc = (ploc + 1) & coreSizeM1;
-                //opDescription = "Skipped because " + line1 + " and " + line2 + " were not equal.";
-            }
-            return ploc;
-        }
-        if(debug != 0)
-        {
-            //System.out.println(opDescription);
-        }
-        return ploc;
-    }
-    public void printCore(int p1loc, int p2loc)
-    {
+        int time = (step >> 1), turn = (step & 1);
+        System.out.println("---- cycle " + time + ", player " + (turn == 0 ? 1 : 2) +
+            " (" + (turn == 0 ? p1 : p2).getName() + ") about to execute: ----");
+        
         int dupCount = 0;
-        int[] dupLine = new int[]{0,0,0,0,0};
+        Instruction dupLine = Instruction.DAT00;
         for(int i = 0; i < core.length; i++)
         {
-            int[] line = core[i];
-            if(Arrays.equals(line, dupLine) && i != p1loc && i != p2loc)
+            Instruction line = core[i];
+            if(line.equals(dupLine) && i != ploc && i != xloc)
             {
                 if(dupCount == 0)
                 {
-                    for(int val : line)
-                    {
-                        System.out.printf("%5d ",val);
-                    }
-                    System.out.println();
+                    System.out.println(line);
                 }
                 dupCount++;
             }
@@ -246,27 +223,20 @@ public class Game
             {
                 if(dupCount == 2)
                 {
-                    for(int val : dupLine)
-                    {
-                        System.out.printf("%5d ",val);
-                    }
-                    System.out.println();
+                    System.out.println(dupLine);
                 }
                 else if(dupCount > 2)
                 {
                     System.out.println("    " + (dupCount - 1) + " lines skipped.");
                 }
-                for(int val : line)
+                System.out.print(line);
+                if(i == ploc)
                 {
-                    System.out.printf("%5d ",val);
+                    System.out.print("\t<- " + (turn == 0 ? 1 : 2));
                 }
-                if(i == p1loc)
+                if(i == xloc)
                 {
-                    System.out.print(" <- 1");
-                }
-                if(i == p2loc)
-                {
-                    System.out.print(" <- 2");
+                    System.out.print("\t<- " + (turn == 0 ? 2 : 1));
                 }
                 System.out.println();
                 dupLine = line;
@@ -275,11 +245,7 @@ public class Game
         }
         if(dupCount == 2)
         {
-            for(int val : dupLine)
-            {
-                System.out.printf("%5d ",val);
-            }
-            System.out.println();
+            System.out.println(dupLine);
         }
         else if(dupCount > 2)
         {
