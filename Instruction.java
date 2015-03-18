@@ -66,6 +66,6 @@ public final class Instruction
     }
     public String toString()
     {
-        return opNames[getOpcode()] + modeNames[getMode1()] + field2 + modeNames[getMode2()] + field2;
+        return opNames[getOpcode()] + modeNames[getMode1()] + field1 + modeNames[getMode2()] + field2;
     }
 }
