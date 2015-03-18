@@ -12,7 +12,7 @@ public final class Instruction
     public static final int MODE_IMM = 0, MODE_DIR = 1, MODE_IND = 2;
 
     private static final String[] opNames = {"DAT", "MOV", "ADD", "SUB", "JMP", "JMZ", "CMP"};
-    private static final String[] modeNames = {"\t#", "\t", "\t@"};
+    private static final String[] modeNames = {"\t#", "\t ", "\t@"};
 
     public static final int modeBits = 2;
     public static final int modeMask = (1 << modeBits)-1;
