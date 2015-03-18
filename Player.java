@@ -18,57 +18,15 @@ public class Player
     {
         this.name = name;
         codeList = new ArrayList<Instruction>();
+        hash = null;
     }
     
-    public void addLine(String opcode, String fieldA, String fieldB)
+    public void addLine(Instruction command)
     {
-        int modeA = Instruction.MODE_DIR;
-        int valA = 0;
-        fieldA = fieldA.trim();
-        if(fieldA.charAt(0) == '#')
-        {
-            modeA = Instruction.MODE_IMM;
-            fieldA = fieldA.substring(1);
-        }
-        else if(fieldA.charAt(0) == '@')
-        {
-            modeA = Instruction.MODE_IND;
-            fieldA = fieldA.substring(1);
-        }
-        try
-        {
-            valA = Integer.parseInt(fieldA);
-        }
-        catch(Exception e)
-        {
-            System.out.println("Player " + name + " had a problem at line " + codeList.size() + ", field A.");
-        }
-        int modeB = Instruction.MODE_DIR;
-        int valB = 0;
-        fieldB = fieldB.trim();
-        if(fieldB.charAt(0) == '#')
-        {
-            modeB = Instruction.MODE_IMM;
-            fieldB = fieldB.substring(1);
-        }
-        else if(fieldB.charAt(0) == '@')
-        {
-            modeB = Instruction.MODE_IND;
-            fieldB = fieldB.substring(1);
-        }
-        try
-        {
-            valB = Integer.parseInt(fieldB);
-        }
-        catch(Exception e)
-        {
-            System.out.println("Player " + name + " had a problem at line " + codeList.size() + ", field B");
-        }
-        int op = Parser.opEncode(opcode.trim().toUpperCase());
-        Instruction command = new Instruction(op, modeA, modeB, valA, valB);
         codeList.add(command);
         hash = null;  // invalidate old hash
     }
+    
     public ArrayList<Instruction> getCode()
     {
         return codeList;

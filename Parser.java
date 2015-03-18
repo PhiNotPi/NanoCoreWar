@@ -34,7 +34,7 @@ public class Parser
         {
             return opMap.get(opcode);
         }
-        return 0;
+        return -1;
     }
     public static Player parseFile(String name, String fileName, boolean verbose)
     {
@@ -45,8 +45,7 @@ public class Parser
         }
         catch(Exception e){
             System.err.println("Problem reading file " + fileName);
-            bot.addLine("dat","0","0");
-            return bot;
+            return null;
         }
         ArrayList<String> lines = new ArrayList<String>(Arrays.asList(data.split(String.format("%n"))));
         ArrayList< ArrayList<String>> commands = new ArrayList<ArrayList<String>>();
@@ -113,14 +112,70 @@ public class Parser
         if(verbose) System.err.println("Preprocessed source of " + name);
         for(ArrayList<String> command : commands)
         {
-            bot.addLine(command.get(0),command.get(1),command.get(2));
-            if(verbose) System.err.println(command.get(0) + " " + command.get(1) + " " + command.get(2));
+            String opcode = command.get(0), fieldA = command.get(1), fieldB = command.get(2);
+            if(verbose) System.err.println(opcode + " " + fieldA + " " + fieldB);
+
+            int op = Parser.opEncode(opcode.trim().toUpperCase());
+            if(op < 0)
+            {
+                System.err.println("Invalid opcode " + opcode + " in file " + fileName);
+                return null;
+            }
+
+            int modeA = Instruction.MODE_DIR;
+            int valA = 0;
+            fieldA = fieldA.trim();
+            if(fieldA.charAt(0) == '#')
+            {
+                modeA = Instruction.MODE_IMM;
+                fieldA = fieldA.substring(1);
+            }
+            else if(fieldA.charAt(0) == '@')
+            {
+                modeA = Instruction.MODE_IND;
+                fieldA = fieldA.substring(1);
+            }
+            try{
+                valA = Integer.parseInt(fieldA);
+            }
+            catch(NumberFormatException e)
+            {
+                System.err.println("Invalid A-field " + fieldA + " in file " + fileName);
+                return null;
+            }
+    
+            int modeB = Instruction.MODE_DIR;
+            int valB = 0;
+            fieldB = fieldB.trim();
+            if(fieldB.charAt(0) == '#')
+            {
+                modeB = Instruction.MODE_IMM;
+                fieldB = fieldB.substring(1);
+            }
+            else if(fieldB.charAt(0) == '@')
+            {
+                modeB = Instruction.MODE_IND;
+                fieldB = fieldB.substring(1);
+            }
+            try{
+                valB = Integer.parseInt(fieldB);
+            }
+            catch(NumberFormatException e)
+            {
+                System.err.println("Invalid B-field " + fieldB + " in file " + fileName);
+                return null;
+            }
+
+            Instruction cmd = new Instruction(op, modeA, modeB, valA, valB);
+            bot.addLine(cmd);
         }
+
         if(verbose) System.err.println("Compiled code of " + name);
         for(Instruction command : bot.getCode())
         {
-            if(verbose) System.err.println(command.getOpcode() + " " + command.getMode1() + " " + command.getMode2() + " " + command.field1 + " " + command.field2);
+            if(verbose) System.err.println(command);
         }
+
         if(verbose) System.err.println("Hash of " + name + ": " + bot.getUniqueHash());
 
         return bot;

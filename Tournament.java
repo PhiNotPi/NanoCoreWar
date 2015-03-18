@@ -85,7 +85,13 @@ public class Tournament
                     String botName = entry.next().trim();
                     String botSource = entry.next().trim();
                     System.err.println("Loading " + botName + " from " + botSource);
-                    players.add(Parser.parseFile(botName, botSource, verbose > 0));
+                    Player bot = Parser.parseFile(botName, botSource, verbose > 0);
+                    if(bot == null)
+                    {
+                        System.err.println("Aborting due to parse errors.");
+                        return;
+                    }
+                    players.add(bot);
                 }
             }
         }
