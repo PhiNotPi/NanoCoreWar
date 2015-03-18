@@ -1,5 +1,6 @@
 coresize  8192    -  Default is 8192.
 repeats      0    -  Number of times each matchup is played.  Set to 0 to run all unique starting configurations.  Default is 0.
+cache        1    -  turn to 0 to disable loading and saving of match results in savedresults.txt.  Default is 1.
 verbose      0    -  turn to 1 to print the original, preprocessed and compiled source of each program.  Default is 0.
 debug        0    -  turn to 1 to print a play-by-play of each battle.  You should decrease your core size and repeats first.  Default is 0.
 maxtime      8    -  The total time before a tie is declared is maxtime * coresize, with time measured in ply (1 move by 1 player equals 1 ply).  Default is 8.

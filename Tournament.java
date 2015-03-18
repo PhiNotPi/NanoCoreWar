@@ -23,6 +23,7 @@ public class Tournament
     static int repeats = 0; //number of times a battle is played between each pair of contestants
     static int debug = 0;
     static int verbose = 0;
+    static int cache = 1;
     
     static final String settingsFile = "settings.txt";
     static final String playerFile = "playerlist.txt";
@@ -59,6 +60,10 @@ public class Tournament
                 if(varName.equals("verbose"))
                 {
                     verbose = val;
+                }
+                if(varName.equals("cache"))
+                {
+                    cache = val;
                 }
             }
         }
@@ -100,26 +105,33 @@ public class Tournament
         
         Map<String,Integer> matchResults = new HashMap<String,Integer>();
         
-        try{
-            Scanner loadResults = new Scanner(new File(saveFile));
-            while(loadResults.hasNextLine())
-            {
-                String[] fields = loadResults.nextLine().split("\\s+");
-                if(fields.length >= 2)
-                {
-                    matchResults.put(fields[0], Integer.decode(fields[1]));
-                }
-            }
-            System.err.println(matchResults.size() + " saved results loaded from " + saveFile);
-            loadResults.close();
-        }
-        catch(FileNotFoundException e)
+        if(cache > 0)
         {
-        	System.err.println(saveFile + " not found, re-running all matches.");
+            try{
+                Scanner loadResults = new Scanner(new File(saveFile));
+                while(loadResults.hasNextLine())
+                {
+                    String[] fields = loadResults.nextLine().split("\\s+");
+                    if(fields.length >= 2)
+                    {
+                        matchResults.put(fields[0], Integer.decode(fields[1]));
+                    }
+                }
+                System.err.println(matchResults.size() + " saved results loaded from " + saveFile);
+                loadResults.close();
+            }
+            catch(FileNotFoundException e)
+            {
+            	System.err.println(saveFile + " not found, re-running all matches.");
+            }
         }
 
         try{
-            PrintWriter saveResults = new PrintWriter(new FileWriter(saveFile, true));  // append mode
+            PrintWriter saveResults = null;
+            if(cache > 0)
+            {
+                saveResults = new PrintWriter(new FileWriter(saveFile, true));  // append mode
+            }
             System.out.println("Pairwise Results:");
             for(int i = 0; i < players.size() - 1; i++)
             {
@@ -155,11 +167,13 @@ public class Tournament
                             Game g2 = new Game(p2, p1, coreSize, maxTime, debug);
                             result = g.runAll() - g2.runAll();
                         }
+                        if(cache > 0)
+                        {
+                            String name1 = (hashOrder < 0 ? p1 : p2).getName();
+                            String name2 = (hashOrder < 0 ? p2 : p1).getName();
+                            saveResults.println(matchHash + " " + (-hashOrder * result) + " (" + name1 + " vs. " + name2 + ")");
+                        }
                         matchResults.put(matchHash, Integer.valueOf(-hashOrder * result));
-                        saveResults.println(matchHash + " " + (-hashOrder * result) + " (" +
-                            (hashOrder < 0
-                            ? p1.getName() + " vs. " + p2.getName()
-                            : p2.getName() + " vs. " + p1.getName()) + ")");
                     }
                     if(result > repeats)
                     {
@@ -179,7 +193,10 @@ public class Tournament
                     }
                 }
             }
-            saveResults.close();
+            if(cache > 0)
+            {
+                saveResults.close();
+            }
         }
         catch(IOException e)
         {
