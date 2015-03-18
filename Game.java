@@ -207,6 +207,7 @@ public class Game
             {
                 if(dupCount == 0)
                 {
+                    System.out.printf("%04d\t", i);
                     System.out.println(line);
                 }
                 dupCount++;
@@ -215,12 +216,14 @@ public class Game
             {
                 if(dupCount == 2)
                 {
+                    System.out.printf("%04d\t", i-1);
                     System.out.println(dupLine);
                 }
                 else if(dupCount > 2)
                 {
                     System.out.println("    " + (dupCount - 1) + " lines skipped.");
                 }
+                System.out.printf("%04d\t", i);
                 System.out.print(line);
                 if(i == ploc)
                 {
@@ -237,6 +240,7 @@ public class Game
         }
         if(dupCount == 2)
         {
+            System.out.printf("%04d\t", core.length-1);
             System.out.println(dupLine);
         }
         else if(dupCount > 2)
