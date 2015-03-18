@@ -57,8 +57,15 @@ public class Parser
             if(verbose) System.err.println(line);
             line = line.trim().replaceAll(","," ").replaceAll("\\s+", " ").toUpperCase();
             String[] fields = line.split(" ");
-            commands.add(new ArrayList<String>(Arrays.asList(line.split(" "))));
-            //System.err.println("Checkpoint 1");
+            if(fields.length == 3 || fields.length == 4)
+            {
+                commands.add(new ArrayList<String>(Arrays.asList(fields)));
+            }
+            else if(line.length() > 0)
+            {
+                System.err.println("Syntax error on line " + i + " in " + fileName + ": " + line);
+                return null;
+            }
         }
         //System.err.println("Checkpoint 2");
         for(int i = 0; i < commands.size(); i++)
