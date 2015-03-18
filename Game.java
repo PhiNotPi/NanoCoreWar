@@ -203,6 +203,8 @@ public class Game
     public void printCore(Instruction[] core, int ploc, int xloc, int step)
     {
         int time = (step >> 1), turn = (step & 1);
+        System.out.println("---- cycle " + time + ", player " + (turn == 0 ? 1 : 2) +
+            " (" + (turn == 0 ? p1 : p2).getName() + ") about to execute: ----");
         
         int dupCount = 0;
         Instruction dupLine = Instruction.DAT00;
