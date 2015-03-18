@@ -23,7 +23,7 @@ public class Tournament
     static int repeats = 0; //number of times a battle is played between each pair of contestants
     static int debug = 0;
     static int verbose = 0;
-    static int cache = 1;
+    static int cache = 2;
     
     static final String settingsFile = "settings.txt";
     static final String playerFile = "playerlist.txt";
@@ -134,7 +134,7 @@ public class Tournament
 
         try{
             PrintWriter saveResults = null;
-            if(cache > 0)
+            if(cache > 1)
             {
                 saveResults = new PrintWriter(new FileWriter(saveFile, true));  // append mode
             }
@@ -173,7 +173,7 @@ public class Tournament
                             Game g2 = new Game(p2, p1, coreSize, maxTime, debug);
                             result = g.runAll() - g2.runAll();
                         }
-                        if(cache > 0)
+                        if(saveResults != null)
                         {
                             String name1 = (hashOrder < 0 ? p1 : p2).getName();
                             String name2 = (hashOrder < 0 ? p2 : p1).getName();
@@ -199,7 +199,7 @@ public class Tournament
                     }
                 }
             }
-            if(cache > 0)
+            if(saveResults != null)
             {
                 saveResults.close();
             }
