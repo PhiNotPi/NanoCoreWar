@@ -155,11 +155,11 @@ public class Tournament
                         : hash2 + ":" + hash1);
                     
                     int result = 0;
-                    boolean cached = false;
+                    String newMarker = (cache > 0 ? " (new)" : "");
                     if(matchResults.containsKey(matchHash))
                     {
                         result = -hashOrder * matchResults.get(matchHash).intValue();
-                        cached = true;
+                        newMarker = "";
                     }
                     else
                     {
@@ -184,18 +184,18 @@ public class Tournament
                     if(result > repeats)
                     {
                         score.put(p1.getName(), score.get(p1.getName()) + 2);
-                        System.out.println(p1.getName() +" > "+ p2.getName() + (cached ? " (cached)" : ""));
+                        System.out.println(p1.getName() +" > "+ p2.getName() + newMarker);
                     }
                     else if(result < repeats)
                     {
                         score.put(p2.getName(), score.get(p2.getName()) + 2);
-                        System.out.println(p2.getName() +" > "+ p1.getName() + (cached ? " (cached)" : ""));
+                        System.out.println(p2.getName() +" > "+ p1.getName() + newMarker);
                     }
                     else
                     {
                         score.put(p1.getName(), score.get(p1.getName()) + 1);
                         score.put(p2.getName(), score.get(p2.getName()) + 1);
-                        System.out.println(p2.getName() +" = "+ p1.getName() + (cached ? " (cached)" : ""));
+                        System.out.println(p2.getName() +" = "+ p1.getName() + newMarker);
                     }
                 }
             }

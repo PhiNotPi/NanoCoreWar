@@ -26,7 +26,7 @@ public class Parser
         put("JMZ",  Instruction.OP_JMZ);
         put("CMP",  Instruction.OP_CMP);
         put("COMPARE",  Instruction.OP_CMP);
-        put("SEQ",  Instruction.OP_CMP);
+        put("SNE",  Instruction.OP_CMP);
     }};
     public static int opEncode(String opcode)
     {
