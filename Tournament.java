@@ -28,6 +28,7 @@ public class Tournament
     static final String settingsFile = "settings.txt";
     static final String playerFile = "playerlist.txt";
     static final String saveFile = "savedresults.txt";
+    static final String leaderboardFile = "leaderboard.txt";
     
     public static void main(String [] args)
     {
@@ -224,6 +225,23 @@ public class Tournament
         
         long endTime = System.nanoTime();
         System.out.println("The tournament took " + ((endTime-startTime)/1000000000.0) + " seconds, or " + ((endTime-startTime)/60000000000.0) + " minutes.");
+
+        try{
+            PrintWriter saveLeaderboard = null;
+            saveLeaderboard = new PrintWriter(new FileWriter(leaderboardFile));
+            saveLeaderboard.println("Leaderboard:");
+            for(String p : playerNames)
+            {
+                saveLeaderboard.printf("%5d - %-40s%n",score.get(p),p);
+            }
+            saveLeaderboard.println("The tournament took " + ((endTime-startTime)/1000000000.0) + " seconds, or " + ((endTime-startTime)/60000000000.0) + " minutes.");
+            saveLeaderboard.close();
+        }
+        catch(IOException e)
+        {
+            System.err.println("Cannot write leaderboard to " + saveFile + ": " + e);
+        }
+
         
     }
 }
